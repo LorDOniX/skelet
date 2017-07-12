@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "node_modules\\.bin\\rollup -w -c rollup.config.conf"
+    "watch": "node_modules\\.bin\\rollup -w -c rollup.config.conf",
+    "dev": "node_modules\\.bin\\rollup -c rollup.config.conf"
   },
   "author": "",
   "license": "ISC",
