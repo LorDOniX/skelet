@@ -10,8 +10,9 @@ Instalace
 
 Ovládání
 --------
-- npm run dev - rollup, traspilace, less
-- npm run dist - rollup, traspilace, minimalizace js, less
-- npm run js - rollup, traspilace
+- npm run dev - rollup, less
+- npm run dist - rollup, traspilace, minimalizace, less
+- npm run js - rollup
+- npm run jsBabel - rollup, traspilace
 - npm run compress - vezme výstup z rollupu, pak jej zminimalizuje
 - npm run watch - sledování změn složek src & less, pak to spouští příslušné tasky
