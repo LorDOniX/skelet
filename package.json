@@ -6,11 +6,15 @@
   "scripts": {
     "watch": "node_modules\\.bin\\rollup -w -c rollup.config.conf",
     "dev": "node_modules\\.bin\\rollup -c rollup.config.conf",
-    "compress": "node_modules\\.bin\\uglifyjs dist\\main.js -o dist\\main.min.js"
+    "compress": "node_modules\\.bin\\uglifyjs dist\\main.js -o dist\\main.min.js",
+    "css": "node_modules\\.bin\\lessc --include-path=less less\\style.less --autoprefix=\"Android 2.3,Android >= 4,Chrome >= 35,Firefox >= 30,Explorer >= 10,iOS >= 8,Opera >= 21,Safari >= 7\" --clean-css=\"--s1 --advanced --compatibility=ie8\" dist\\style.css"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "less": "^2.7.2",
+    "less-plugin-autoprefix": "^1.5.1",
+    "less-plugin-clean-css": "^1.5.1",
     "rollup": "^0.45.1",
     "rollup-plugin-includepaths": "^0.2.2",
     "uglify-js": "^3.0.24"
