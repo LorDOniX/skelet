@@ -10,7 +10,7 @@ class Main {
 	}
 
 	getY() {
-		return "bla";
+		return "bla bla";
 	}
 };
 
