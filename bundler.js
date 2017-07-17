@@ -8,34 +8,6 @@ var conf = require("./conf");
 
 const WATCHER_TIMEOUT = 500;
 
-function watch(watchPath, cb) {
-	if (!watchPath || typeof cb !== "function") return false;
-
-	let timeoutId = null;
-	let buffer = [];
-
-	chokidar.watch(watchPath).on('change', (path, stats) => {
-		buffer.push(path);
-
-		if (timeoutId) {
-			clearTimeout(timeoutId);
-			timeoutId = null;
-		}
-
-		timeoutId = setTimeout(() => {
-			if (buffer.length < 1) return;
-
-			let file = buffer[0];
-
-			cb(file, buffer);
-			
-			buffer = [];
-		}, WATCHER_TIMEOUT);
-	});
-
-	return true;
-};
-
 class Bundler {
 	constructor() {
 		this._args = this._getArgs();
@@ -55,7 +27,7 @@ class Bundler {
 
 			case "watch":
 				this._makeAll().then(() => {
-					this._watch();
+					this._watcher();
 				});
 				break;
 
@@ -89,6 +61,34 @@ class Bundler {
 		});
 	}
 
+	_watch(watchPath, cb) {
+		if (!watchPath || typeof cb !== "function") return false;
+
+		let timeoutId = null;
+		let buffer = [];
+
+		chokidar.watch(watchPath).on('change', (path, stats) => {
+			buffer.push(path);
+
+			if (timeoutId) {
+				clearTimeout(timeoutId);
+				timeoutId = null;
+			}
+
+			timeoutId = setTimeout(() => {
+				if (buffer.length < 1) return;
+
+				let file = buffer[0];
+
+				cb(file, buffer);
+				
+				buffer = [];
+			}, WATCHER_TIMEOUT);
+		});
+
+		return true;
+	}
+
 	_makeAll() {
 		return new Promise((resolve, reject) => {
 			this._makeJs().then(() => {
@@ -103,13 +103,13 @@ class Bundler {
 		});
 	}
 
-	_watch() {
+	_watcher() {
 		let conf = this._conf.watcher;
 
 		if (!conf) return;
 
 		conf.forEach(item => {
-			watch(item.path, () => {
+			this._watch(item.path, () => {
 				switch (item.type) {
 					case "js":
 						this._makeJs();
