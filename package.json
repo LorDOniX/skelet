@@ -4,13 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "watch": "node watcher.js",
-    "js": "node_modules\\.bin\\rollup -c rollup.config.dev.conf",
-    "jsBabel": "node_modules\\.bin\\rollup -c rollup.config.dist.conf",
-    "compress": "node_modules\\.bin\\uglifyjs dist\\main.js -o dist\\main.min.js",
-    "css": "node_modules\\.bin\\lessc --include-path=less less\\style.less --autoprefix=\"Android 2.3,Android >= 4,Chrome >= 35,Firefox >= 30,Explorer >= 10,iOS >= 8,Opera >= 21,Safari >= 7\" --clean-css=\"--s1 --advanced --compatibility=ie8\" dist\\style.css",
-    "dev": "npm run js && npm run css",
-    "dist": "npm run jsBabel && npm run compress && npm run css"
+    "watch": "node bundler.js watch",
+    "js": "node bundler.js js",
+    "jsBabel": "node bundler.js jsBabel",
+    "compress": "node bundler.js compress",
+    "css": "node bundler.js css",
+    "dev": "node bundler.js dev",
+    "dist": "node bundler.js dist"
   },
   "author": "",
   "license": "ISC",
