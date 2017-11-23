@@ -4,16 +4,18 @@ var pluginLoader = new less.PluginLoader(less);
 var fs = require('fs');
 var chokidar = require('chokidar');
 var UglifyJS = require("uglify-js");
-var conf = require("./conf");
+var { getConf, getJs } = require("./conf");
 
 const WATCHER_TIMEOUT = 500;
 
 class Bundler {
 	constructor() {
 		this._args = this._getArgs();
-		this._conf = conf.getConf();
 
 		let arg = this._args.length ? this._args[0] : "";
+		
+		this._conf = getConf();
+		this._isDist = ["jsBabel", "dist"].indexOf(arg) != -1;
 
 		switch (arg) {
 			case "js":
@@ -21,7 +23,6 @@ class Bundler {
 				break;
 
 			case "jsBabel":
-				this._conf = conf.getConf(true);
 				this._makeJs();
 				break;
 
@@ -44,7 +45,6 @@ class Bundler {
 				break;
 
 			case "dist":
-				this._conf = conf.getConf(true);
 				this._makeAll().then(() => {
 					this._compress();
 				});
@@ -125,7 +125,7 @@ class Bundler {
 
 	_makeJs() {
 		return new Promise((resolve, reject) => {
-			let conf = this._conf.js;
+			let conf = getJs(this._isDist);
 
 			rollup.rollup(conf).then(bundle => {
 				bundle.write(conf);
