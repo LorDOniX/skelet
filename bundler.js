@@ -130,11 +130,11 @@ class Bundler {
 					let data = fs.readFileSync(conf.dest, "utf-8");
 
 					fs.writeFileSync(conf.dest, this._polyfills.join("\n") + data, "utf-8");
+					resolve();
 				}, e => {
 					console.error(e);
 					reject(e);
 				});
-				resolve();
 			}, e => {
 				console.error(e);
 				reject(e);
