@@ -29,8 +29,8 @@ module.exports = {
 				plugins: jsPlugins
 			},
 			less: {
-				file: "less\\style.less",
-				output: "dist\\style.css",
+				file: "less/style.less",
+				output: "dist/style.css",
 				paths: ["less"],
 				plugins: {
 					"autoprefix": "Android 2.3,Android >= 4,Chrome >= 35,Firefox >= 30,Explorer >= 10,iOS >= 8,Opera >= 21,Safari >= 7",
@@ -38,8 +38,8 @@ module.exports = {
 				}
 			},
 			compress: {
-				file: "dist\\main.js",
-				output: "dist\\main.min.js"
+				file: "dist/main.js",
+				output: "dist/main.min.js"
 			}
 		};
 	}
