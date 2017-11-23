@@ -28,20 +28,14 @@ exports.getConf = () => {
 	};
 };
 
-exports.getJs = isDist => {
-	let jsPlugins = [ multiEntry(), includePaths({paths:["src"]}), filesize() ];
-
-	if (isDist) {
-		jsPlugins.push(babel({
-			exclude: 'node_modules/**'
-		}));
-	}
-
+exports.getJs = () => {
 	return {
 		entry: "./src/main.js",
 		moduleName: "main",
 		format: "iife",
 		dest: "dist/main.js",
-		plugins: jsPlugins
+		plugins: [ multiEntry(), includePaths({paths:["src"]}), filesize(), babel({
+			exclude: 'node_modules/**'
+		})]
 	};
 };

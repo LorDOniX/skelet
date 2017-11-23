@@ -9,6 +9,8 @@
     ]
   ],
   "plugins": [
-    "external-helpers"
+    "external-helpers",
+    "transform-async-functions",
+    "transform-regenerator"
   ]
 }

@@ -11,18 +11,15 @@ const WATCHER_TIMEOUT = 500;
 class Bundler {
 	constructor() {
 		this._args = this._getArgs();
+		this._conf = getConf();
+		this._polyfills = [
+			fs.readFileSync("./polyfills/runtime.js", "utf-8")
+		];
 
 		let arg = this._args.length ? this._args[0] : "";
-		
-		this._conf = getConf();
-		this._isDist = ["jsBabel", "dist"].indexOf(arg) != -1;
 
 		switch (arg) {
 			case "js":
-				this._makeJs();
-				break;
-
-			case "jsBabel":
 				this._makeJs();
 				break;
 
@@ -125,10 +122,18 @@ class Bundler {
 
 	_makeJs() {
 		return new Promise((resolve, reject) => {
-			let conf = getJs(this._isDist);
+			let conf = getJs();
 
 			rollup.rollup(conf).then(bundle => {
-				bundle.write(conf);
+				bundle.write(conf).then(() => {
+					// pridame polyfilly
+					let data = fs.readFileSync(conf.dest, "utf-8");
+
+					fs.writeFileSync(conf.dest, this._polyfills.join("\n") + data, "utf-8");
+				}, e => {
+					console.error(e);
+					reject(e);
+				});
 				resolve();
 			}, e => {
 				console.error(e);
