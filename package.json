@@ -15,12 +15,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "boxen": "^1.2.2",
     "chokidar": "^1.7.0",
+    "colors": "^1.1.2",
+    "filesize": "^3.5.11",
+    "gzip-size": "^4.1.0",
     "less": "^2.7.2",
     "less-plugin-autoprefix": "^1.5.1",
     "less-plugin-clean-css": "^1.5.1",
     "rollup": "^0.45.1",
-    "rollup-plugin-filesize": "^1.4.2",
     "rollup-plugin-includepaths": "^0.2.2",
     "rollup-plugin-multi-entry": "^2.0.1",
     "uglify-js": "^3.0.24"

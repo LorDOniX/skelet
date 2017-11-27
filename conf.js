@@ -1,7 +1,7 @@
 var includePaths = require("rollup-plugin-includepaths");
 var multiEntry = require('rollup-plugin-multi-entry');
-var filesize = require('rollup-plugin-filesize');
 var babel = require('rollup-plugin-babel');
+var filesize = require('./filesize');
 
 exports.getConf = () => {
 	return {
