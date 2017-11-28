@@ -15,6 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "boxen": "^1.2.2",
     "chokidar": "^1.7.0",
     "colors": "^1.1.2",

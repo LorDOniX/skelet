@@ -7,6 +7,12 @@ class Main {
 		this._roman = new Roman();
 
 		this._start();
+
+		//this._x("onix", 5, {z:4});
+		this._rom((...args) => {
+			console.log("zavolana funkce");
+			console.log(args);
+		});
 	}
 
 	getX() {
@@ -30,6 +36,16 @@ class Main {
 				resolve({ a: 5 });
 			}, 500);
 		});
+	}
+
+	_x(...args) {
+		console.log("x func");
+		console.log(args);
+		console.log(args.length);
+	}
+
+	_rom(cb) {
+		cb("onix", 5, {z:4});
 	}
 };
 

@@ -11,6 +11,7 @@
   "plugins": [
     "external-helpers",
     "transform-async-functions",
-    "transform-regenerator"
+    "transform-regenerator",
+    "transform-object-rest-spread"
   ]
 }

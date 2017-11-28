@@ -4,6 +4,7 @@ Skelet
 - watcher pro js soubory
 - minimalizace vystupu
 - podpora async/await!!!
+- podpora spread operátoru ...
 
 Instalace
 ---------
