@@ -10,8 +10,7 @@
   ],
   "plugins": [
     "external-helpers",
-    "transform-async-functions",
-    "transform-regenerator",
+    "fast-async",
     "transform-object-rest-spread"
   ]
 }

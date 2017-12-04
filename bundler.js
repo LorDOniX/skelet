@@ -12,20 +12,23 @@ class Bundler {
 	constructor() {
 		this._args = this._getArgs();
 		this._conf = getConf();
-		this._polyfills = [
-			fs.readFileSync("./polyfills/runtime.js", "utf-8")
-		];
 
 		let arg = this._args.length ? this._args[0] : "";
 
 		switch (arg) {
 			case "js":
-				this._makeJs();
+				this._makeJs().then(() => {}, e => {
+					console.error(e.id);
+					console.error(e.codeFrame);
+				});
 				break;
 
 			case "watch":
 				this._makeAll().then(() => {
 					this._watcher();
+				}, e => {
+					console.error(e.id);
+					console.error(e.codeFrame);
 				});
 				break;
 
@@ -34,16 +37,22 @@ class Bundler {
 				break;
 
 			case "css":
-				this._makeLess();
+				this._makeLess().then(() => {}, () => {});
 				break;
 
 			case "dev":
-				this._makeAll();
+				this._makeAll().then(() => {}, e => {
+					console.error(e.id);
+					console.error(e.codeFrame);
+				});
 				break;
 
 			case "dist":
 				this._makeAll().then(() => {
 					this._compress();
+				}, e => {
+					console.error(e.id);
+					console.error(e.codeFrame);
 				});
 				break;
 
@@ -92,10 +101,10 @@ class Bundler {
 				this._makeLess().then(() => {
 					resolve();
 				}, e => {
-					reject();
+					reject(e);
 				});
 			}, e => {
-				reject();
+				reject(e);
 			});
 		});
 	}
@@ -109,11 +118,14 @@ class Bundler {
 			this._watch(item.path, () => {
 				switch (item.type) {
 					case "js":
-						this._makeJs();
+						this._makeJs().then(() => {}, e => {
+							console.error(e.id);
+							console.error(e.codeFrame);
+						});
 						break
 
 					case "less":
-						this._makeLess();
+						this._makeLess().then(() => {}, () => {});
 						break;
 				}
 			});
@@ -126,17 +138,11 @@ class Bundler {
 
 			rollup.rollup(conf).then(bundle => {
 				bundle.write(conf).then(() => {
-					// pridame polyfilly
-					let data = fs.readFileSync(conf.dest, "utf-8");
-
-					fs.writeFileSync(conf.dest, this._polyfills.join("\n") + data, "utf-8");
 					resolve();
 				}, e => {
-					console.error(e);
 					reject(e);
 				});
 			}, e => {
-				console.error(e);
 				reject(e);
 			});
 		});

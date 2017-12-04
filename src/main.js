@@ -13,14 +13,13 @@ class Main {
 			console.log("zavolana funkce");
 			console.log(args);
 		});
+
+		this.getX();
 	}
 
 	getX() {
-		return this._roman.getX();
-	}
-
-	getY() {
-		return "bla bla";
+		let x = await this._roman.getX();
+		console.log(x);
 	}
 
 	async _start() {

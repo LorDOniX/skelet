@@ -1,6 +1,6 @@
 class Roman {
-	getX() {
-		return "x je 5";
+	async getX() {
+		return Promise.resolve("x je 5");
 	}
 
 	getZ() {
