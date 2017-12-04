@@ -1,6 +1,5 @@
 var includePaths = require("rollup-plugin-includepaths");
 var multiEntry = require('rollup-plugin-multi-entry');
-var babel = require('rollup-plugin-babel');
 var filesize = require('./filesize');
 
 exports.getConf = () => {
@@ -12,6 +11,18 @@ exports.getConf = () => {
 			path: "less",
 			type: "less"
 		}],
+		babel: {
+			input: "dist/main-rollup.js",
+			dest: "dist/main-babel.js",
+			compress: "dist/main-babel.min.js"
+		},
+		rollup: {
+			entry: "./src/main.js",
+			dest: "dist/main-rollup.js",
+			compress: "dist/main-rollup.min.js",
+			moduleName: "main",
+			format: "iife"
+		},
 		less: {
 			file: "./less/style.less",
 			output: "./dist/style.css",
@@ -20,22 +31,14 @@ exports.getConf = () => {
 				"autoprefix": "Android 2.3,Android >= 4,Chrome >= 35,Firefox >= 30,Explorer >= 10,iOS >= 8,Opera >= 21,Safari >= 7",
 				"clean-css": "--s1 --advanced --compatibility=ie8"
 			}
-		},
-		compress: {
-			file: "./dist/main.js",
-			output: "./dist/main.min.js"
 		}
 	};
 };
 
-exports.getJs = () => {
-	return {
-		entry: "./src/main.js",
-		moduleName: "main",
-		format: "iife",
-		dest: "dist/main.js",
-		plugins: [ multiEntry(), includePaths({paths:["src"]}), filesize(), babel({
-			exclude: 'node_modules/**'
-		})]
-	};
+exports.getRollupPlugins = () => {
+	return [
+		multiEntry(),
+		includePaths({paths:["src"]}),
+		filesize()
+	];
 };

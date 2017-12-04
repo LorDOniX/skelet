@@ -17,7 +17,7 @@ class Main {
 		this.getX();
 	}
 
-	getX() {
+	async getX() {
 		let x = await this._roman.getX();
 		console.log(x);
 	}
