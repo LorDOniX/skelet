@@ -8,11 +8,11 @@ const MAIN_PATH = "static";
 
 // paths
 app.use("/dist", express.static(path.join(__dirname, 'dist')));
-app.use("/lib", express.static(path.join(__dirname, 'lib')));
+app.use("/js", express.static(path.join(__dirname, 'js')));
 
 // default
 app.get('/*', function(req, res) {
-	res.sendfile(MAIN_PATH + '/index.html');
+	res.sendfile("./index.html");
 });
 
 console.log("Server running on the port " + port);
