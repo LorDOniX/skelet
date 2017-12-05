@@ -1,6 +1,6 @@
 var includePaths = require("rollup-plugin-includepaths");
 var multiEntry = require('rollup-plugin-multi-entry');
-var filesize = require('./filesize');
+var filesize = require('./lib/filesize');
 
 exports.getConf = () => {
 	return {

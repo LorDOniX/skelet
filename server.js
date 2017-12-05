@@ -8,6 +8,7 @@ const MAIN_PATH = "static";
 
 // paths
 app.use("/dist", express.static(path.join(__dirname, 'dist')));
+app.use("/lib", express.static(path.join(__dirname, 'lib')));
 
 // default
 app.get('/*', function(req, res) {
