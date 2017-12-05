@@ -5,15 +5,13 @@ var pluginLoader = new less.PluginLoader(less);
 var fs = require('fs');
 var chokidar = require('chokidar');
 var UglifyJS = require("uglify-es");
-var { getConf, getRollupPlugins } = require("./conf");
+var { CONF, getRollup } = require("./conf");
 
 const WATCHER_TIMEOUT = 500;
 
 class Bundler {
 	constructor() {
 		this._args = this._getArgs();
-		this._conf = getConf();
-
 		this._run(this._args.length ? this._args[0] : "");
 	}
 
@@ -21,21 +19,25 @@ class Bundler {
 		try {
 			switch (param) {
 				case "watch":
-					await this._makeAll();
+					await this._makeJs();
+					await this._makeLess();
 					this._watcher();
 					break;
 
 				case "dev":
-					await this._makeAll();
+					await this._makeJs();
+					await this._makeLess();
 					break;
 
 				case "dist":
-					await this._makeAll();
+					await this._makeJs();
 					// rollup
-					this._compress(this._conf.rollup.dest, this._conf.rollup.compress);
+					this._compress(CONF.rollup.dest, CONF.rollup.compress);
 					// babel
-					this._babel(this._conf.babel.input, this._conf.babel.dest);
-					this._compress(this._conf.babel.dest, this._conf.babel.compress);
+					this._babel(CONF.babel.input, CONF.babel.dest);
+					this._compress(CONF.babel.dest, CONF.babel.compress);
+					// css
+					this._makeLess();
 					break;
 
 				default:
@@ -90,13 +92,8 @@ class Bundler {
 		return true;
 	}
 
-	async _makeAll() {
-		await this._makeJs();
-		await this._makeLess();
-	}
-
 	_watcher() {
-		let conf = this._conf.watcher;
+		let conf = CONF.watcher;
 
 		if (!conf) return;
 
@@ -116,23 +113,13 @@ class Bundler {
 	}
 
 	async _makeJs() {
-		let plugins = getRollupPlugins();
-		let conf = {
-			plugins
-		};
-
-		Object.keys(this._conf.rollup).forEach(key => {
-			if (key == "compress") return;
-
-			conf[key] = this._conf.rollup[key];
-		});
-
-		let bundle = await rollup.rollup(conf);
+		let conf = getRollup();
+		let bundle = await rollup.rollup(getRollup(conf));
 		await bundle.write(conf);
 	}
 
 	async _makeLess(file, output) {
-		let conf = this._conf.less;
+		let conf = CONF.less;
 		let data = fs.readFileSync(conf.file, "utf8");
 		let opts = {};
 		opts.filename = conf.file;
