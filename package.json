@@ -18,6 +18,7 @@
     "boxen": "^1.2.2",
     "chokidar": "^1.7.0",
     "colors": "^1.1.2",
+    "express": "^4.16.2",
     "fast-async": "^6.3.0",
     "filesize": "^3.5.11",
     "gzip-size": "^4.1.0",
