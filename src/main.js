@@ -1,3 +1,4 @@
+import "babel-polyfill";
 import Roman from "roman/roman";
 
 class Main {

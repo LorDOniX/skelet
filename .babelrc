@@ -1,16 +1,15 @@
-// .babelrc
 {
+	"plugins": [["fast-async"],["runtime"],["transform-runtime"]],
   "presets": [
-    [
-      "es2015",
-      {
-        "modules": false
-      }
-    ]
-  ],
-  "plugins": [
-    "external-helpers",
-    "fast-async",
-    "transform-object-rest-spread"
+    ["env", {
+      "targets": {
+        "ie": 10
+      },
+      "loose": true,
+      "modules": false,
+      "useBuiltins": "runtime",
+      "debug": true,
+      "exclude": ["transform-async-to-generator", "transform-regenerator"]
+    }]
   ]
 }
