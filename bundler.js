@@ -45,16 +45,7 @@ class Bundler {
 			}
 		}
 		catch (e) {
-			if ("id" in e) {
-				console.error(e.id);
-			}
-
-			if ("codeFrame" in e) {
-				console.error(e.codeFrame);
-			}
-			else {
-				console.log(e);
-			}
+			this._handleError(e);
 		}
 	}
 
@@ -70,7 +61,7 @@ class Bundler {
 		let timeoutId = null;
 		let buffer = [];
 
-		chokidar.watch(watchPath).on('change', (path, stats) => {
+		chokidar.watch(watchPath).on('change', path => {
 			buffer.push(path);
 
 			if (timeoutId) {
@@ -99,14 +90,19 @@ class Bundler {
 
 		conf.forEach(item => {
 			this._watch(item.path, () => {
-				switch (item.type) {
-					case "js":
-						this._makeJs();
-						break
-
-					case "less":
-						this._makeLess();
-						break;
+				try {
+					switch (item.type) {
+						case "js":
+							this._makeJs();
+							break
+	
+						case "less":
+							this._makeLess();
+							break;
+					}
+				}
+				catch (e) {
+					this._handleError(e);
 				}
 			});
 		});
@@ -118,7 +114,7 @@ class Bundler {
 		await bundle.write(conf);
 	}
 
-	async _makeLess(file, output) {
+	async _makeLess() {
 		let conf = CONF.less;
 		let data = fs.readFileSync(conf.file, "utf8");
 		let opts = {};
@@ -181,6 +177,21 @@ class Bundler {
 		let value = lv > 0 ? (size / Math.pow(1024, lv)).toFixed(2) : size;
 
 		return value + " " + sizes[lv] + "B";
+	}
+
+	_handleError(e) {
+		if ("id" in e) {
+			console.error(e.id);
+		}
+
+		if ("frame" in e) {
+			console.error(e.toString());
+			console.error(e.loc.file + ":");
+			console.error(e.frame);
+		}
+		else {
+			console.log(e);
+		}
 	}
 }
 
