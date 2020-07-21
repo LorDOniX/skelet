@@ -10,22 +10,20 @@ const TYPES = {
 	area: "AREA"
 };
 
-// todo
-// nahledy, signal pro otoceni vsech, ts prepsani, zelene cary pro spojeni, hotovo/zrusit tlacitko
-// 2 canvas, jeden s fotkou na pozadi, pak se udela druhy canvas nad tim, ktery je pruhledny, ale pres clearRect se vyreze to co chceme videt
-// cd \\wsl$\Ubuntu-20.04\home\roman\mnt\frasier.dev
-// udelat kurzory
-
+/**
+ * Signaly:
+ * @crop-rotate nad window, detail obsahuje angle
+ */
 export default class Crop {
 	constructor(optionsArg) {
 		this._options = Object.assign({
 			img: null,
 			exif: null,
-			canvasPreview: null,
+			previewCanvas: null,
 			width: 600,
 			height: 450,
-			minWidth: 100,
-			minHeight: 100,
+			minWidth: 50,
+			minHeight: 50,
 			background: "#fff",
 			overlay: "rgba(255,255,255,.5)",
 			color: "#29ac07",
@@ -43,35 +41,168 @@ export default class Crop {
 		};
 		this._ctxs = {
 			canvas: null,
-			canvasImage: null
+			canvasImage: null,
+			canvasPreview: this._options.previewCanvas ? this._options.previewCanvas.getContext("2d") : null
 		};
-		this._ctxPreview = this._options.canvasPreview;
 		this._pointsData = this._getPointsData();
 		this._mousePos = {
 			x: 0,
 			y: 0
 		};
 		this._selected = null;
-		console.log(this);
+		this._cursor = "";
+		this._savedData = {
+			aabb: null,
+			angle: 0
+		};
+
+		// init
 		this._build();
-	}
-
-	destroy() {
-
-	}
-
-	setAngle(angle) {
-		this._angle = angle;
-		if (this._angle >= 360) this._angle = 0;
-		this._imgData = getDataFromImg(this._options.img, {
-			orientation: this._angle
-		});
 		this._fitSize();
+		this._saveData();
 		this._redraw(true);
+		this.setPreview();
+	}
+
+	/**
+	 * Destroy cropu.
+	 */
+	destroy() {
+		this._dom.cover.remove();
+		this._dom.cover.removeEventListener("pointerdown", this);
+		this._removeCursor();
+	}
+
+	/**
+	 * Ulozeni zmen.
+	 */
+	save() {
+		this._saveData();
+		this.setPreview();
+	}
+
+	/**
+	 * Zruseni zmen. Prekresleni canvasu.
+	 */
+	cancel() {
+		this._setAngle(this._savedData.angle);
+		this.loadAABB(this._savedData.aabb);
+		this.setPreview();
+		this._removeCursor();
+	}
+
+	/**
+	 * Vykresleni preview canvasu.
+	 */
+	setPreview() {
+		if (!this._options.previewCanvas) return;
+		
+		let p = this._pointsData.obj;
+		let padding = this._options.padding;
+		let x1 = p.nw.x - padding;
+		let y1 = p.nw.y - padding;
+		let w = p.ne.x - p.nw.x - padding;
+		let h = p.sw.y - p.nw.y - padding;
+		let cw = this._dom.canvas.width - padding;
+		let ch = this._dom.canvas.height - padding;
+		// image
+		let ix1 = x1 / cw * this._imgData.canvas.width;
+		let iy1 = y1 / ch * this._imgData.canvas.height;
+		let iw = w / cw * this._imgData.canvas.width;
+		let ih = h / ch * this._imgData.canvas.height;
+		// vykreslime obrazek
+		this._ctxs.canvasPreview.clearRect(0, 0, this._options.previewCanvas.width, this._options.previewCanvas.height);
+		this._ctxs.canvasPreview.drawImage(this._imgData.canvas, ix1, iy1, iw, ih, 0, 0, this._options.previewCanvas.width, this._options.previewCanvas.height);
+	}
+
+	/**
+	 * Rotace o 90 stupnu doprava.
+	 */
+	rotate() {
+		this._setAngle(this._angle + ROTATE_STEP);
+		let event = new CustomEvent('crop-rotate', {
+			detail: {
+				angle: this._angle
+			}
+		});
+		window.dispatchEvent(event);
+	}
+
+	/**
+	 * Nacteni AABB suradnice.
+	 */
+	loadAABB(aabb) {
+		// pouze kladne cisla
+		for (let i = 0, max = aabb.length; i < max; i++) {
+			aabb[i] = Math.max(0, aabb[i]);
+		}
+
+		// nastavime aabb
+		let x = this._options.padding + aabb[0];
+		let y = this._options.padding + aabb[1];
+		let w = Math.max(x + aabb[2] - aabb[0], this._options.minWidth);
+		let h = Math.max(y + aabb[3] - aabb[1], this._options.minHeight);
+		// omezeni
+		if (x + w >= this._dom.canvas.width - 2 * this._options.padding) {
+			w = this._dom.canvas.width - this._options.padding - x;
+		}
+
+		if (y + h >= this._dom.canvas.height - 2 * this._options.padding) {
+			h = this._dom.canvas.height - this._options.padding - y;
+		}
+		
+		// nastaveni
+		this._pointsData.obj.nw.x = x;
+		this._pointsData.obj.nw.y = y;
+		this._pointsData.obj.ne.x = this._pointsData.obj.nw.x + w;
+		this._pointsData.obj.ne.y = this._pointsData.obj.nw.y;
+		this._pointsData.obj.sw.x = this._pointsData.obj.nw.x;
+		this._pointsData.obj.sw.y = this._pointsData.obj.nw.y + h;
+		this._pointsData.obj.se.x = this._pointsData.obj.ne.x;
+		this._pointsData.obj.se.y = this._pointsData.obj.sw.y;
+		// prekreslime
+		this._redraw();
+		this._saveData();
+	}
+
+	/**
+	 * Get crop bounding box.
+	 * 
+	 * @param {Number} [scale] Recalculate all positions using scale constants
+	 * @return {Array} [x1, y1, x2, y2] 2 points coordinates from top left corner
+	 */
+	getAABB(scale) {
+		if (typeof scale === "undefined") {
+			scale = this._imgData.canvas.width / (this._dom.canvas.width - 2 * this._options.padding);
+		}
+
+		let nw = this._pointsData.obj.nw;
+		let se = this._pointsData.obj.se;
+
+		return [
+			Math.round((nw.x - this._options.padding) * scale),
+			Math.round((nw.y - this._options.padding) * scale),
+			Math.round((se.x - this._options.padding) * scale),
+			Math.round((se.y - this._options.padding) * scale)
+		];
+	}
+
+	get container() {
+		return this._dom.cover;
+	}
+
+	get changed() {
+		let curAABB = this.getAABB();
+		let savedAABB = this._savedData.aabb;
+
+		return (curAABB[0] != savedAABB[0] || curAABB[1] != savedAABB[1] || curAABB[2] != savedAABB[2] || curAABB[3] != savedAABB[3]);
 	}
 
 	handleEvent(e) {
 		switch (e.type) {
+			case "pointerdown":
+				this._down(e);
+				break;
 			case "pointermove":
 				this._move(e);
 				break;
@@ -83,38 +214,21 @@ export default class Crop {
 
 	_build() {
 		this._dom.cover = document.createElement("div");
-		Object.assign(this._dom.cover.style, {
-			margin: "0 auto",
-			width: "1000px"
-		});
-		Object.assign(this._dom.cover.style, {
-			position: "relative"
-		});
+		this._dom.cover.classList.add("crop-cover");
 		this._dom.canvas = document.createElement("canvas");
+		this._dom.canvas.classList.add("canvas-edit");
 		this._dom.canvasImage = document.createElement("canvas");
-		Object.assign(this._dom.canvas.style, {
-			position: "absolute",
-			left: 0,
-			top: 0,
-			right: 0,
-			bottom: 0
-		});
-		this._dom.cover.addEventListener("pointerdown", e => {
-			this._down(e);
-		});
+		this._dom.canvasImage.classList.add("canvas-image");
 		this._dom.cover.appendChild(this._dom.canvasImage);
 		this._dom.cover.appendChild(this._dom.canvas);
+		// ctx
 		this._ctxs.canvas = this._dom.canvas.getContext("2d");
 		this._ctxs.canvasImage = this._dom.canvasImage.getContext("2d");
-		document.body.appendChild(this._dom.cover);
-		let rotateBtn = document.createElement("button");
-		rotateBtn.textContent = "Rotate";
-		rotateBtn.addEventListener("click", e => {
-			this.setAngle(this._angle + ROTATE_STEP);
+		// eventy
+		this._dom.cover.addEventListener("pointerdown", this);
+		this._dom.cover.addEventListener("pointermove", e => {
+			this._moveCursor(e);
 		});
-		document.body.appendChild(rotateBtn);
-		this._fitSize();
-		this._redraw(true);
 	}
 
 	_redraw(full) {
@@ -154,15 +268,24 @@ export default class Crop {
 	}
 
 	_fitSize() {
+		// zdroj pro sirku a vysku
+		let padding2x = this._options.padding * 2;
 		let width = this._imgData.isPortrait ? this._options.height : this._options.width;
 		let height = this._imgData.isPortrait ? this._options.width : this._options.height;
-		this._dom.canvas.width = width + this._options.padding * 2;
-		this._dom.canvas.height = height + this._options.padding * 2;
+		// nastavime canvasy
+		this._dom.canvas.width = width + padding2x;
+		this._dom.canvas.height = height + padding2x;
 		this._dom.canvasImage.width = this._dom.canvas.width;
 		this._dom.canvasImage.height = this._dom.canvas.height;
-		// todo sirka a vyska podle 1x1 fix
+		// rozmery
 		let cropWidth = width;
 		let cropHeight = Math.floor(width / this._options.ratio);
+		
+		if (cropHeight > this._dom.canvas.height - padding2x) {
+			cropHeight = this._dom.canvas.height - padding2x;
+			cropWidth = Math.floor(cropHeight * this._options.ratio);
+		}
+
 		let paddingLeft =  Math.floor((width - cropWidth) / 2);
 		let paddingTop =  Math.floor((height - cropHeight) / 2);
 		// nastaveni bodu
@@ -208,6 +331,42 @@ export default class Crop {
 		this._selected = null;
 		document.body.removeEventListener("pointermove", this);
 		document.body.removeEventListener("pointerup", this);
+	}
+
+	_moveCursor(e) {
+		if (this._selected) return;
+
+		let item = this._getItemOnPos(e.layerX, e.layerY);
+		let newCursor = "";
+
+		if (item) {
+			switch (item.type) {
+				case TYPES.area:
+					newCursor = "type-area";
+					break;
+				case TYPES.nw:
+					newCursor = "type-nw";
+					break;
+				case TYPES.ne:
+					newCursor = "type-ne";
+					break;
+				case TYPES.sw:
+					newCursor = "type-sw";
+					break;
+				case TYPES.se:
+					newCursor = "type-se";
+					break;
+			}
+		}
+
+		if (newCursor != this._cursor) {
+			this._removeCursor();
+			this._cursor = newCursor;
+
+			if (this._cursor) {
+				this._dom.canvas.classList.add(this._cursor);
+			}
+		}
 	}
 
 	_getItemOnPos(x, y) {
@@ -290,11 +449,11 @@ export default class Crop {
 			// x test
 			let xTest1 = p.nw.x + diffX;
 			let xTest2 = p.ne.x + diffX;
-			let applyX = xTest1 >= padding && xTest2 <= this._dom.canvas.width - this._options.padding;
+			let applyX = xTest1 >= padding && xTest2 <= this._dom.canvas.width - padding;
 			// y test
 			let yTest1 = p.nw.y + diffY;
 			let yTest2 = p.sw.y + diffY;
-			let applyY = yTest1 >= padding && yTest2 <= this._dom.canvas.height - this._options.padding;
+			let applyY = yTest1 >= padding && yTest2 <= this._dom.canvas.height - padding;
 
 			for (let point of this._pointsData.array) {
 				if (applyX) {
@@ -307,5 +466,51 @@ export default class Crop {
 
 			return true;
 		}
+		else {
+			// rohove body
+			// spocitame y podle pomeru
+			diffY = diffX / this._options.ratio * (this._selected.type == TYPES.nw || this._selected.type == TYPES.se ? 1 : -1);
+			// nove souradnice pro x a y tahaneho bodu + okolnich bodu
+			let newX1 = this._selected.x + diffX;
+			let newY1 = this._selected.y + diffY;
+			let newX2 = this._selected.adjacentX.x + diffX;
+			let newY2 = this._selected.adjacentY.y + diffY;
+			let xTest = newX1 >= padding && newX1 <= this._dom.canvas.width - padding && newX2 >= padding && newX2 <= this._dom.canvas.width - padding;
+			let yTest = newY1 >= padding && newY1 <= this._dom.canvas.height - padding && newY2 >= padding && newY2 <= this._dom.canvas.height - padding;
+			let width = (this._selected.type == TYPES.nw || this._selected.type == TYPES.sw) ? p.ne.x - newX1 : newX1 - p.nw.x;
+			let height = (this._selected.type == TYPES.nw || this._selected.type == TYPES.ne) ? p.sw.y - newY1 : newY1 - p.nw.y;
+			
+			if (xTest && yTest && width >= this._options.minWidth && height >= this._options.minHeight) {
+				this._selected.x = newX1;
+				this._selected.y = newY1;
+				this._selected.adjacentX.x = newX2;
+				this._selected.adjacentY.y = newY2;
+				return true;
+			}
+			else return false;
+		}
+	}
+
+	_setAngle(angle) {
+		this._angle = angle;
+		if (this._angle >= 360) this._angle = 0;
+		this._imgData = getDataFromImg(this._options.img, {
+			orientation: this._angle
+		});
+		this._fitSize();
+		this._redraw(true);
+	}
+
+	_saveData() {
+		this._savedData.aabb = this.getAABB();
+		this._savedData.angle = this._angle;
+	}
+
+	_removeCursor() {
+		if (this._cursor) {
+			this._dom.canvas.classList.remove(this._cursor);
+		}
+
+		this._cursor = "";
 	}
 };

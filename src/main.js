@@ -23,7 +23,11 @@ const MIN_SIZE = {
 
 class Main {
 	constructor() {
-		console.log("app start");
+		window.xyz = [];
+		this._main();
+	}
+
+	_main() {
 		let fileInput = document.createElement("input");
 		fileInput.type = "file";
 		fileInput.addEventListener("change", async(e) => {
@@ -44,19 +48,61 @@ class Main {
 			}
 			else {
 				let exif = await getEXIF(file);
-				let previewCanvas = document.createElement("canvas");
-				previewCanvas.width = 100;
-				previewCanvas.height = 50;
-				document.body.appendChild(previewCanvas);
-				let crop = new Crop({
-					img,
-					exif,
-					previewCanvas,
-					ratio: SIZES[0].width / SIZES[0].height
-				});
+
+				this._createCrop(exif, img, SIZES[0]);
+				this._createCrop(exif, img, SIZES[1]);
+				this._createCrop(exif, img, SIZES[2]);
 			}
 		});
 		document.body.appendChild(fileInput);
+	}
+
+	_createCrop(exif, img, size) {
+		let cover = document.createElement("div");
+		cover.classList.add("item-cover");
+		let info = document.createElement("p");
+		info.textContent = `width: ${size.width}, height: ${size.height}, key: ${size.key}`;
+		cover.appendChild(info);
+
+		let previewCanvas = document.createElement("canvas");
+		Object.assign(previewCanvas.style, {
+			border: "1px solid black"
+		});
+		let ratio = size.width / size.height;
+		previewCanvas.width = 100;
+		previewCanvas.height = Math.floor(previewCanvas.width / ratio);
+		cover.appendChild(previewCanvas);
+
+		let crop = new Crop({
+			img,
+			exif,
+			previewCanvas,
+			ratio
+		});
+		window.xyz.push(crop);
+		cover.appendChild(crop.container);
+
+		let rotateBtn = document.createElement("button");
+		rotateBtn.textContent = "Rotate";
+		rotateBtn.addEventListener("click", e => {
+			crop.rotate();
+		});
+		cover.appendChild(rotateBtn);
+
+		let doneBtn = document.createElement("button");
+		doneBtn.textContent = "Hotovo";
+		doneBtn.addEventListener("click", e => {
+			crop.save();
+		});
+		cover.appendChild(doneBtn);
+
+		let cancelBtn = document.createElement("button");
+		cancelBtn.textContent = "Zrušit";
+		cancelBtn.addEventListener("click", e => {
+			crop.cancel();
+		});
+		cover.appendChild(cancelBtn);
+		document.body.appendChild(cover);
 	}
 };
 

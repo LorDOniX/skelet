@@ -16,3 +16,37 @@ body {
 		font-size: 24px;
 	}
 }
+
+.crop-cover {
+	margin: 0 auto;
+	width: 1000px;
+	position: relative;
+
+	.canvas-edit {
+		position: absolute;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom: 0;
+
+		&.type-area {
+			cursor: move;
+		}
+
+		&.type-nw {
+			cursor: nw-resize;
+		}
+
+		&.type-ne {
+			cursor: ne-resize;
+		}
+
+		&.type-sw {
+			cursor: sw-resize;
+		}
+
+		&.type-se {
+			cursor: se-resize;
+		}
+	}
+}
